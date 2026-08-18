@@ -1,0 +1,9 @@
+data/
+__pycache__/
+backend/app.db
+*.db
+backend/artifacts/
+node_modules/
+dist/
+.venv/
+*.pyc
