@@ -77,7 +77,7 @@ const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <header className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-3">

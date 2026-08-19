@@ -86,7 +86,7 @@ const DetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="min-h-screen bg-black text-white">
         <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="h-8 w-24 bg-slate-700 rounded shimmer mb-6" />
           <div className="grid md:grid-cols-[300px_1fr] gap-8">
@@ -106,7 +106,7 @@ const DetailPage: React.FC = () => {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error || 'Not found'}</p>
           <Button onClick={() => navigate(-1)}>Go Back</Button>
@@ -116,7 +116,7 @@ const DetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Back */}
         <button

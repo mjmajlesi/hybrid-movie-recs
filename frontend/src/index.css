@@ -85,62 +85,79 @@ body {
 :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 
 /* ── LEGACY THEME OVERRIDE ──
-   The pages below were written with Tailwind's default slate/purple palette.
-   This block remaps those legacy utility classes onto the new black/white
-   theme so every page stays consistent WITHOUT editing each component.
+   Remaps Tailwind slate/purple palette onto the new black/white theme.
    ──────────────────────────────────────────────────────────────── */
 @layer base {
   /* Backgrounds */
   .bg-slate-900, .bg-slate-950 { background-color: #000000 !important; }
-  .bg-slate-800, .bg-slate-800\/40, .bg-slate-800\/50, .bg-slate-800\/30, .bg-slate-800\/20 {
-    background-color: rgba(255,255,255,0.04) !important;
-  }
-  .bg-slate-700, .bg-slate-700\/30 { background-color: rgba(255,255,255,0.08) !important; }
-  .bg-purple-600, .bg-purple-900\/30, .bg-purple-900\/20, .bg-purple-900\/40, .bg-purple-800\/40 {
-    background-color: rgba(255,255,255,0.08) !important;
-  }
+  .bg-slate-800 { background-color: rgba(255,255,255,0.04) !important; }
+  .bg-slate-800\/40 { background-color: rgba(255,255,255,0.04) !important; }
+  .bg-slate-800\/50 { background-color: rgba(255,255,255,0.05) !important; }
+  .bg-slate-800\/30 { background-color: rgba(255,255,255,0.03) !important; }
+  .bg-slate-800\/20 { background-color: rgba(255,255,255,0.02) !important; }
+  .bg-slate-700 { background-color: rgba(255,255,255,0.08) !important; }
+  .bg-slate-700\/30 { background-color: rgba(255,255,255,0.06) !important; }
+  .bg-purple-600 { background-color: rgba(255,255,255,0.15) !important; }
+  .bg-purple-900\/30 { background-color: rgba(255,255,255,0.06) !important; }
+  .bg-purple-900\/20 { background-color: rgba(255,255,255,0.04) !important; }
+  .bg-purple-900\/40 { background-color: rgba(255,255,255,0.08) !important; }
+  .bg-purple-800\/40 { background-color: rgba(255,255,255,0.06) !important; }
 
   /* Text */
   .text-white { color: #f0f0f0 !important; }
-  .text-gray-300, .text-gray-400, .text-gray-200 { color: rgba(240,240,240,0.65) !important; }
-  .text-gray-500, .text-gray-600 { color: rgba(240,240,240,0.45) !important; }
-  .text-purple-300, .text-purple-400 { color: #f0f0f0 !important; }
+  .text-gray-300 { color: rgba(240,240,240,0.65) !important; }
+  .text-gray-400 { color: rgba(240,240,240,0.55) !important; }
+  .text-gray-500 { color: rgba(240,240,240,0.40) !important; }
+  .text-gray-600 { color: rgba(240,240,240,0.35) !important; }
+  .text-gray-200 { color: rgba(240,240,240,0.75) !important; }
   .text-purple-300 { color: rgba(240,240,240,0.8) !important; }
-  .text-blue-400 { color: #f0f0f0 !important; }
+  .text-purple-400 { color: rgba(240,240,240,0.85) !important; }
+  .text-blue-400 { color: rgba(240,240,240,0.75) !important; }
 
   /* Borders */
-  .border-slate-700, .border-slate-800, .border-slate-600 {
-    border-color: rgba(255,255,255,0.12) !important;
-  }
-  .border-purple-500\/50, .border-purple-700\/50 { border-color: rgba(255,255,255,0.2) !important; }
+  .border-slate-700 { border-color: rgba(255,255,255,0.12) !important; }
+  .border-slate-800 { border-color: rgba(255,255,255,0.10) !important; }
+  .border-slate-600 { border-color: rgba(255,255,255,0.12) !important; }
+  .border-purple-500\/50 { border-color: rgba(255,255,255,0.20) !important; }
+  .border-purple-700\/50 { border-color: rgba(255,255,255,0.15) !important; }
 
-  /* Gradients (override purple/blue with neutral) */
-  .bg-gradient-to-r.from-purple-600.to-blue-600,
-  .bg-gradient-to-br.from-slate-900.via-purple-900.to-slate-900,
-  .bg-gradient-to-r.from-purple-400.via-blue-400.to-purple-400 {
-    background: linear-gradient(to right, rgba(255,255,255,0.92), rgba(255,255,255,0.7)) !important;
-    -webkit-background-clip: border-box !important;
-    background-clip: border-box !important;
+  /* Gradient backgrounds → dark (NOT page backgrounds, only UI accents) */
+  .bg-gradient-to-r.from-purple-600.to-blue-600 {
+    background: linear-gradient(to right, rgba(255,255,255,0.90), rgba(255,255,255,0.75)) !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
   }
-  .bg-gradient-to-r.from-purple-400.to-blue-400,
-  .from-purple-400.via-blue-400.to-purple-400 {
-    background-clip: text !important;
+  .bg-gradient-to-r.from-purple-600.to-blue-600 {
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+  }
+
+  /* The landing page gradient (dark → dark purple → dark) must stay dark! */
+  .via-purple-900 { --tw-gradient-via: #000 !important; }
+  .from-slate-900 { --tw-gradient-from: #000 !important; }
+  .to-slate-900 { --tw-gradient-to: #000 !important; }
+
+  /* Text gradient (light text on dark) */
+  .bg-gradient-to-r.from-purple-400.via-blue-400.to-purple-400 {
+    background: linear-gradient(to right, rgba(240,240,240,0.9), rgba(240,240,240,0.95), rgba(240,240,240,0.9)) !important;
     -webkit-background-clip: text !important;
+    background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
   }
 
   /* Hover states */
-  .hover\:bg-slate-700:hover, .hover\:bg-slate-800:hover,
-  .hover\:bg-purple-700:hover, .hover\:bg-purple-800\/40:hover {
-    background-color: rgba(255,255,255,0.1) !important;
-  }
-  .hover\:border-slate-500:hover, .hover\:border-purple-500:hover,
-  .hover\:border-purple-500\/50:hover {
-    border-color: rgba(255,255,255,0.3) !important;
-  }
-  .hover\:text-white:hover, .hover\:text-purple-400:hover { color: #f0f0f0 !important; }
+  .hover\:bg-slate-700:hover { background-color: rgba(255,255,255,0.10) !important; }
+  .hover\:bg-slate-800:hover { background-color: rgba(255,255,255,0.06) !important; }
+  .hover\:bg-purple-700:hover { background-color: rgba(255,255,255,0.10) !important; }
+  .hover\:bg-purple-800\/40:hover { background-color: rgba(255,255,255,0.08) !important; }
+  .hover\:border-slate-500:hover { border-color: rgba(255,255,255,0.25) !important; }
+  .hover\:border-purple-500:hover { border-color: rgba(255,255,255,0.30) !important; }
+  .hover\:border-purple-500\/50:hover { border-color: rgba(255,255,255,0.25) !important; }
+  .hover\:text-white:hover { color: #f0f0f0 !important; }
+  .hover\:text-purple-400:hover { color: #f0f0f0 !important; }
 
   /* Glow / shadow */
-  .shadow-purple-900\/40, .shadow-purple-900\/50 { box-shadow: none !important; }
+  .shadow-purple-900\/40 { box-shadow: none !important; }
+  .shadow-purple-900\/50 { box-shadow: none !important; }
 }
 
