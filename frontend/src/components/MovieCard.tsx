@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StarRating } from './StarRating';
 import { getPosterUrl, getGradientForTitle, getInitials } from '../utils/media';
 import type { SearchItem } from '../types';
@@ -75,6 +75,9 @@ export const MovieCard: React.FC<MovieCardProps> = ({
     posterPath: poster_path ?? undefined,
   });
 
+  const [imgFailed, setImgFailed] = useState(false);
+  const showPoster = posterUrl && !imgFailed;
+
   const gradient = getGradientForTitle(title);
   const initials = getInitials(title);
 
@@ -87,15 +90,13 @@ export const MovieCard: React.FC<MovieCardProps> = ({
       className={`group relative bg-slate-800/40 border border-slate-700 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${cardSize}`}
     >
       <div className={`relative ${aspect} bg-gradient-to-br from-slate-700 to-slate-800`}>
-        {posterUrl ? (
+        {showPoster ? (
           <img
-            src={posterUrl}
+            src={posterUrl!}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            onError={() => setImgFailed(true)}
           />
         ) : (
           <div

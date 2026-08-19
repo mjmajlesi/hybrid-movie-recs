@@ -1,13 +1,19 @@
 export type ItemType = 'movie' | 'show';
 
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+
 /**
- * Build a TMDB poster URL. Movies use their tmdb_id to construct the
- * image path on the fly (the dataset didn't store poster_path for movies),
- * while shows already have poster_path in the DB.
+ * Build a poster URL.
+ *
+ * Movies: we cached posters locally at /covers/movies/{tmdbId}.jpg.
+ * If the file doesn't exist locally (or wasn't downloaded yet), we fall
+ * back to the live TMDB CDN URL which serves the image by tmdb_id.
+ *
+ * Shows: already store poster_path in the DB (e.g. '/abc.jpg'), served
+ * directly from TMDB CDN.
  *
  * @param type 'movie' | 'show'
- * @param tmdbId numeric TMDB id (movies)
- * @param posterPath string path like '/abc.jpg' (shows)
+ * @param opts { tmdbId?, posterPath? }
  * @param size one of w92, w154, w185, w342, w500, original
  */
 export function getPosterUrl(
@@ -15,18 +21,18 @@ export function getPosterUrl(
   opts: { tmdbId?: number | null; posterPath?: string | null },
   size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'original' = 'w342'
 ): string | null {
-  const base = 'https://image.tmdb.org/t/p';
-
   if (type === 'show') {
     if (opts.posterPath) {
-      return `${base}/${size}${opts.posterPath}`;
+      return `${TMDB_IMAGE_BASE}/${size}${opts.posterPath}`;
     }
     return null;
   }
 
-  // Movie: TMDB serves /t/p/<size>/<tmdb_id>.jpg for most movies
+  // Movie: TMDB CDN serves /t/p/<size>/<tmdb_id>.jpg
+  // (We also keep local copies under /covers/movies/<tmdb_id>.jpg, but
+  // serving from CDN is simpler and works for any movie, cached or not.)
   if (opts.tmdbId) {
-    return `${base}/${size}/${opts.tmdbId}.jpg`;
+    return `${TMDB_IMAGE_BASE}/${size}/${opts.tmdbId}.jpg`;
   }
   return null;
 }

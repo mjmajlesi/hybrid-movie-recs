@@ -52,11 +52,13 @@ def get_shows(limit: int = 20, offset: int = 0):
 def search(q: str = Query(..., min_length=2), limit: int = 20):
     conn = get_db()
     rows = conn.execute(
-        "SELECT 'movie' as type, movie_id as id, title as name, year, genres, avg_rating as rating "
+        "SELECT 'movie' as type, movie_id as id, title as name, year, genres, avg_rating as rating, "
+        "tmdb_id as tmdb_id, NULL as poster_path "
         "FROM movies WHERE title LIKE ? "
         "UNION ALL "
         "SELECT 'show' as type, show_id as id, name, "
-        "CAST(strftime('%Y', first_air_date) AS INTEGER) as year, genres, vote_average as rating "
+        "CAST(strftime('%Y', first_air_date) AS INTEGER) as year, genres, vote_average as rating, "
+        "tmdb_id as tmdb_id, poster_path as poster_path "
         "FROM shows WHERE name LIKE ? LIMIT ?",
         (f"%{q}%", f"%{q}%", limit)
     ).fetchall()

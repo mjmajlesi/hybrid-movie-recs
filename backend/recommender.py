@@ -207,7 +207,7 @@ def recommend(user_id: int, n: int = 10, item_type: Optional[str] = None) -> Lis
     candidates = []
 
     if item_type != 'show':
-        for r in conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count FROM movies").fetchall():
+        for r in conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count, tmdb_id FROM movies").fetchall():
             item_id = f"m:{r['movie_id']}"
             if item_id in profile['rated_item_ids']: continue
             genres = set(r['genres'].split('|')) if r['genres'] else set()
@@ -219,10 +219,11 @@ def recommend(user_id: int, n: int = 10, item_type: Optional[str] = None) -> Lis
             sc = hybrid_score(profile, genres, year, avg, cnt, collab=collab)
             candidates.append({'item_id': item_id, 'title': r['title'], 'type': 'movie', 'score': sc,
                 'genres': ', '.join(sorted(genres))[:80], 'year': year, 'rating': round(avg, 2),
-                'reason': _reason(profile, genres, avg, year, collab=collab)})
+                'reason': _reason(profile, genres, avg, year, collab=collab),
+                'tmdb_id': r['tmdb_id'], 'poster_path': None, 'overview': None})
 
     if item_type != 'movie':
-        for r in conn.execute("SELECT show_id, name, genres, first_air_date, vote_average, vote_count FROM shows WHERE vote_count>=50").fetchall():
+        for r in conn.execute("SELECT show_id, name, genres, first_air_date, vote_average, vote_count, poster_path, overview, tmdb_id FROM shows WHERE vote_count>=50").fetchall():
             item_id = f"s:{r['show_id']}"
             if item_id in profile['rated_item_ids']: continue
             genres = set(r['genres'].split(',')) if r['genres'] else set()
@@ -233,7 +234,8 @@ def recommend(user_id: int, n: int = 10, item_type: Optional[str] = None) -> Lis
             sc = hybrid_score(profile, genres, year, avg, cnt)
             candidates.append({'item_id': item_id, 'title': r['name'] or '', 'type': 'show', 'score': sc,
                 'genres': ', '.join(sorted(genres))[:80], 'year': year, 'rating': round(avg, 2),
-                'reason': _reason(profile, genres, avg, year)})
+                'reason': _reason(profile, genres, avg, year),
+                'tmdb_id': r['tmdb_id'], 'poster_path': r['poster_path'], 'overview': r['overview']})
 
     conn.close()
     candidates.sort(key=lambda x: x['score'], reverse=True)
@@ -255,15 +257,17 @@ def _popular_fallback(n: int, item_type: Optional[str] = None) -> List[Dict]:
     conn = get_db()
     results = []
     if item_type != 'show':
-        for r in conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count FROM movies WHERE rating_count>0 ORDER BY avg_rating DESC, rating_count DESC LIMIT ?", (n,)).fetchall():
+        for r in conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count, tmdb_id FROM movies WHERE rating_count>0 ORDER BY avg_rating DESC, rating_count DESC LIMIT ?", (n,)).fetchall():
             results.append({'item_id': f"m:{r['movie_id']}", 'title': r['title'], 'type': 'movie', 'score': 0.0,
                 'genres': r['genres'] or '', 'year': r['year'] or 0, 'rating': r['avg_rating'] or 0.0,
-                'reason': "Popular (no ratings yet)"})
+                'reason': "Popular (no ratings yet)",
+                'tmdb_id': r['tmdb_id'], 'poster_path': None, 'overview': None})
     if item_type != 'movie' and len(results) < n:
-        for r in conn.execute("SELECT show_id, name, genres, vote_average, vote_count FROM shows WHERE vote_count>=50 ORDER BY vote_average DESC LIMIT ?", (n - len(results),)).fetchall():
+        for r in conn.execute("SELECT show_id, name, genres, vote_average, vote_count, poster_path, overview, tmdb_id FROM shows WHERE vote_count>=50 ORDER BY vote_average DESC LIMIT ?", (n - len(results),)).fetchall():
             results.append({'item_id': f"s:{r['show_id']}", 'title': r['name'] or '', 'type': 'show', 'score': 0.0,
                 'genres': r['genres'] or '', 'year': 0, 'rating': round(r['vote_average'], 2) if r['vote_average'] else 0.0,
-                'reason': "Popular (no ratings yet)"})
+                'reason': "Popular (no ratings yet)",
+                'tmdb_id': r['tmdb_id'], 'poster_path': r['poster_path'], 'overview': r['overview']})
     conn.close()
     return results[:n]
 

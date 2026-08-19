@@ -184,7 +184,7 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-2">
-                <Sparkles className="text-purple-400" size={32} />
+                <Sparkles size={32} />
                 <span>Recommendations</span>
               </h1>
               <p className="text-gray-400 text-sm mt-1">
@@ -208,7 +208,7 @@ const Home: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search movies & shows... (press Esc to clear)"
-              className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all"
               onKeyDown={(e) => e.key === 'Escape' && clearSearch()}
             />
             <svg
@@ -244,7 +244,7 @@ const Home: React.FC = () => {
             {trendingMovies.length > 0 && (
               <section className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp size={20} className="text-purple-400" />
+                  <TrendingUp size={20} />
                   <h2 className="text-xl font-bold">Trending Movies</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -313,7 +313,7 @@ const Home: React.FC = () => {
                   onClick={() => setActiveTab('movies')}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                     activeTab === 'movies'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                      ? ' text-white'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -323,7 +323,7 @@ const Home: React.FC = () => {
                   onClick={() => activeTab === 'shows' ? setViewMode('list') : setActiveTab('shows')}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                     activeTab === 'shows'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                      ? ' text-white'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -371,7 +371,7 @@ const Home: React.FC = () => {
                           onClick={() => setSelectedGenre(g)}
                           className={`px-3 py-1.5 text-xs rounded-full transition-all ${
                             selectedGenre === g
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                              ? ' text-white'
                               : 'bg-slate-800 text-gray-300 hover:text-white'
                           }`}
                         >
@@ -412,7 +412,7 @@ const Home: React.FC = () => {
                   <p className="text-gray-400 max-w-md mx-auto mb-6">
                     Rate movies and shows on the Discovery page, then refresh here.
                   </p>
-                  <Button onClick={() => navigate('/onboarding')} className="bg-gradient-to-r from-purple-600 to-blue-600">
+                  <Button onClick={() => navigate('/onboarding')}>
                     Go Rate Items
                   </Button>
                 </div>
@@ -437,7 +437,7 @@ const Home: React.FC = () => {
                       onClick={() => navigate(`/${rec.type}/${rec.item_id}`)}
                       className="flex items-center gap-4 p-4 bg-slate-800/40 border border-slate-700 rounded-xl hover:border-purple-500/50 transition-all cursor-pointer group"
                     >
-                      <div className="relative w-16 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-16 h-24 rounded-lg overflow-hidden shrink-0">
                         <MovieCard item={rec} size="sm" />
                       </div>
                       <div className="flex-1 min-w-0">
