@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ── Theme tokens ── */
+:root {
+  --background: 0 0% 2%;
+  --foreground: 0 0% 96%;
+  --card: 240 4% 10%;
+  --card-foreground: 0 0% 96%;
+  --popover: 240 4% 12%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 0 0% 90%;
+  --primary-foreground: 240 5% 4%;
+  --secondary: 240 4% 18%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 240 4% 15%;
+  --muted-foreground: 240 5% 60%;
+  --accent: 240 4% 18%;
+  --accent-foreground: 0 0% 96%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 96%;
+  --border: 240 5% 15%;
+  --input: 240 4% 14%;
+  --ring: 200 80% 70%;
+  --radius: 0.75rem;
+  --sidebar: 240 5.9% 10%;
+  --sidebar-foreground: 0 0% 98%;
+}
+
+/* ── Base reset ── */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(at 0% 0%, hsl(200 80% 30% / 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsl(220 80% 30% / 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsl(190 80% 30% / 0.07) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsl(180 80% 30% / 0.06) 0px, transparent 50%),
+    hsl(var(--background));
+}
+
+/* ── Utilities ── */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-gray-300 via-white to-gray-300 bg-clip-text text-transparent;
+  }
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-gray-300 to-white text-black;
+  }
+  .glass { background: hsl(var(--card) / 0.7); backdrop-filter: blur(12px); }
+  .glass-strong { background: hsl(var(--card) / 0.95); backdrop-filter: blur(20px); }
+  .shimmer {
+    background: linear-gradient(90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted)) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 9999px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+}
+
+/* ── Custom scrollbar (global) ── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.25); border-radius: 9999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.45); background-clip: padding-box; }
+::selection { background: hsl(var(--ring) / 0.35); color: hsl(var(--primary-foreground)); }
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* ── LEGACY THEME OVERRIDE ──
+   The pages below were written with Tailwind's default slate/purple palette.
+   This block remaps those legacy utility classes onto the new black/white
+   theme so every page stays consistent WITHOUT editing each component.
+   ──────────────────────────────────────────────────────────────── */
+@layer base {
+  /* Backgrounds */
+  .bg-slate-900, .bg-slate-950 { background-color: #000000 !important; }
+  .bg-slate-800, .bg-slate-800\/40, .bg-slate-800\/50, .bg-slate-800\/30, .bg-slate-800\/20 {
+    background-color: rgba(255,255,255,0.04) !important;
+  }
+  .bg-slate-700, .bg-slate-700\/30 { background-color: rgba(255,255,255,0.08) !important; }
+  .bg-purple-600, .bg-purple-900\/30, .bg-purple-900\/20, .bg-purple-900\/40, .bg-purple-800\/40 {
+    background-color: rgba(255,255,255,0.08) !important;
+  }
+
+  /* Text */
+  .text-white { color: #f0f0f0 !important; }
+  .text-gray-300, .text-gray-400, .text-gray-200 { color: rgba(240,240,240,0.65) !important; }
+  .text-gray-500, .text-gray-600 { color: rgba(240,240,240,0.45) !important; }
+  .text-purple-300, .text-purple-400 { color: #f0f0f0 !important; }
+  .text-purple-300 { color: rgba(240,240,240,0.8) !important; }
+  .text-blue-400 { color: #f0f0f0 !important; }
+
+  /* Borders */
+  .border-slate-700, .border-slate-800, .border-slate-600 {
+    border-color: rgba(255,255,255,0.12) !important;
+  }
+  .border-purple-500\/50, .border-purple-700\/50 { border-color: rgba(255,255,255,0.2) !important; }
+
+  /* Gradients (override purple/blue with neutral) */
+  .bg-gradient-to-r.from-purple-600.to-blue-600,
+  .bg-gradient-to-br.from-slate-900.via-purple-900.to-slate-900,
+  .bg-gradient-to-r.from-purple-400.via-blue-400.to-purple-400 {
+    background: linear-gradient(to right, rgba(255,255,255,0.92), rgba(255,255,255,0.7)) !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+  }
+  .bg-gradient-to-r.from-purple-400.to-blue-400,
+  .from-purple-400.via-blue-400.to-purple-400 {
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  /* Hover states */
+  .hover\:bg-slate-700:hover, .hover\:bg-slate-800:hover,
+  .hover\:bg-purple-700:hover, .hover\:bg-purple-800\/40:hover {
+    background-color: rgba(255,255,255,0.1) !important;
+  }
+  .hover\:border-slate-500:hover, .hover\:border-purple-500:hover,
+  .hover\:border-purple-500\/50:hover {
+    border-color: rgba(255,255,255,0.3) !important;
+  }
+  .hover\:text-white:hover, .hover\:text-purple-400:hover { color: #f0f0f0 !important; }
+
+  /* Glow / shadow */
+  .shadow-purple-900\/40, .shadow-purple-900\/50 { box-shadow: none !important; }
+}
+
