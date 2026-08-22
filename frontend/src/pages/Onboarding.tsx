@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { searchItems, rateItem } from '../api';
 import { StarRating } from '../components/StarRating';
 import { MovieCard } from '../components/MovieCard';
 import { Button } from '../components/Button';
 import type { SearchItem } from '../types';
 import { useDebounce } from '../utils/useDebounce';
+import { useUserId } from '../utils/useUserId';
 import { Search, Loader2, Check } from 'lucide-react';
 
 const Onboarding: React.FC = () => {
+  const [userId] = useUserId();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<SearchItem[]>([]);
@@ -63,12 +67,14 @@ const Onboarding: React.FC = () => {
     setError(null);
     setSuccessMsg(null);
     try {
-      await Promise.all(selectedItems.map((item) => rateItem(1, item.id, rating)));
+      await Promise.all(selectedItems.map((item) => rateItem(userId, item.id, rating)));
       setSuccessMsg(`Saved! Rated ${selectedItems.length} item(s) as ${rating.toFixed(1)} stars.`);
       setSelectedItems([]);
       setRating(0);
       setQuery('');
       setSearchResults([]);
+      // Take the user straight to their fresh recommendations
+      navigate(`/home?u=${userId}`);
     } catch (err) {
       setError('Failed to save ratings.');
     } finally {
@@ -163,7 +169,7 @@ const Onboarding: React.FC = () => {
             <div className="flex flex-wrap gap-3">
               {selectedItems.map((item) => (
                 <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 bg-slate-800 rounded-lg p-2 pr-4">
-                  <div className="w-8 h-10 bg-slate-700 rounded flex-shrink-0 flex items-center justify-center text-sm">
+                  <div className="w-8 h-10 bg-slate-700 rounded shrink-0 flex items-center justify-center text-sm">
                     🎬
                   </div>
                   <div>

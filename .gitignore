@@ -2,6 +2,8 @@ data/
 __pycache__/
 backend/app.db
 *.db
+*.db-shm
+*.db-wal
 backend/artifacts/
 node_modules/
 dist/

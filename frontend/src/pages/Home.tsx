@@ -10,6 +10,7 @@ import {
 import { MovieCard } from '../components/MovieCard';
 import { StarRating } from '../components/StarRating';
 import { Button } from '../components/Button';
+import { useUserId } from '../utils/useUserId';
 import type { Recommendation, SearchItem } from '../types';
 import { Sparkles, Grid, List, TrendingUp, SlidersHorizontal } from 'lucide-react';
 
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState(1);
+  const [userId, setUserId] = useUserId();
   const [activeTab, setActiveTab] = useState<'movies' | 'shows'>('movies');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -107,7 +108,22 @@ const Home: React.FC = () => {
     }
   };
 
-  // Apply genre/sor
+  // Normalise search results into Recommendation shape so the grid/list
+  // views can use item_id/title/reason/score uniformly.
+  const searchAsRecs: Recommendation[] = searchResults.map((s) => ({
+    item_id: s.id,
+    title: s.name,
+    type: s.type,
+    score: 0,
+    genres: s.genres || '',
+    year: s.year || 0,
+    rating: s.rating || 0,
+    reason: 'Search result',
+    poster_path: s.poster_path || '',
+    tmdb_id: null,
+  }));
+
+  // Apply genre/sort filters
   const filteredRecs: Recommendation[] = useMemo(() => {
     if (searchResults.length > 0) {
       return searchAsRecs;
@@ -139,21 +155,6 @@ const Home: React.FC = () => {
     return items;
   }, [recommendations, searchResults, selectedGenre, sortOption]);
 
-  // Normalise search results into Recommendation shape so the grid/list
-  // views can use item_id/title/reason/score uniformly.
-  const searchAsRecs: Recommendation[] = searchResults.map((s) => ({
-    item_id: (s as any).id || `${s.type}:${s.id}`,
-    title: s.name,
-    type: s.type,
-    score: 0,
-    genres: s.genres || '',
-    year: s.year || 0,
-    rating: s.rating || 0,
-    reason: 'Search result',
-    poster_path: (s as any).poster_path || '',
-    tmdb_id: (s as any).tmdb_id || null,
-  }));
-
   const movieRecs = filteredRecs.filter((r) => r.type === 'movie');
   const showRecs = filteredRecs.filter((r) => r.type === 'show');
   const displayRecs: Recommendation[] = searchAsRecs.length > 0
@@ -165,7 +166,7 @@ const Home: React.FC = () => {
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="bg-slate-800/40 border border-slate-700 rounded-xl overflow-hidden">
-          <div className="aspect-[2/3] bg-slate-700 shimmer rounded-t-xl" />
+          <div className="aspect-2/3 bg-slate-700 shimmer rounded-t-xl" />
           <div className="p-3 space-y-2">
             <div className="h-5 bg-slate-700 rounded w-3/4 shimmer" />
             <div className="h-3 bg-slate-700 rounded w-1/2 shimmer" />
@@ -195,7 +196,7 @@ const Home: React.FC = () => {
               <Button variant="outline" size="sm" onClick={() => setUserId(userId === 1 ? 2 : 1)}>
                 Switch to User #{userId === 1 ? 2 : 1}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate('/ratings')}>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/ratings?u=${userId}`)}>
                 My Ratings
               </Button>
             </div>
@@ -221,11 +222,11 @@ const Home: React.FC = () => {
               strokeWidth={2}
             >
               <circle cx={11} cy={11} r={8} />
-              <line x1={21} y1={21} />
+              <line x1="16.65" y1="16.65" x2="21" y2="21" />
             </svg>
           </div>
 
-          {searchQuery.length > 0 && !searchQuery.trim() === false && (
+          {searchQuery.trim().length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -263,7 +264,7 @@ const Home: React.FC = () => {
                         poster_path: m.poster_path || '',
                         tmdb_id: m.tmdb_id,
                       } as Recommendation}
-                      onClick={() => navigate(`/movie/m:${m.movie_id}`)}
+                      onClick={() => navigate(`/movie/m:${m.movie_id}?u=${userId}`)}
                       size="sm"
                     />
                   ))}
@@ -275,7 +276,7 @@ const Home: React.FC = () => {
             {trendingShows.length > 0 && (
               <section className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp size={20} className="text-blue-400" />
+                  <TrendingUp size={20} />
                   <h2 className="text-xl font-bold">Trending Series</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -293,7 +294,7 @@ const Home: React.FC = () => {
                         reason: '',
                         poster_path: s.poster_path || '',
                       } as Recommendation}
-                      onClick={() => navigate(`/show/s:${s.show_id}`)}
+                      onClick={() => navigate(`/show/s:${s.show_id}?u=${userId}`)}
                       size="sm"
                     />
                   ))}
@@ -412,17 +413,17 @@ const Home: React.FC = () => {
                   <p className="text-gray-400 max-w-md mx-auto mb-6">
                     Rate movies and shows on the Discovery page, then refresh here.
                   </p>
-                  <Button onClick={() => navigate('/onboarding')}>
+                  <Button onClick={() => navigate(`/onboarding?u=${userId}`)}>
                     Go Rate Items
                   </Button>
                 </div>
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                   {displayRecs.map((rec) => (
-                    <div key={rec.item_id} onClick={() => navigate(`/${rec.type}/${rec.item_id}`)} className="cursor-pointer">
+                    <div key={rec.item_id} onClick={() => navigate(`/${rec.type}/${rec.item_id}?u=${userId}`)} className="cursor-pointer">
                       <MovieCard
                         item={rec}
-                        onClick={() => navigate(`/${rec.type}/${rec.item_id}`)}
+                        onClick={() => navigate(`/${rec.type}/${rec.item_id}?u=${userId}`)}
                         onRate={(val) => handleRate(rec.item_id, val)}
                         showMatchScore={true}
                       />
@@ -434,7 +435,7 @@ const Home: React.FC = () => {
                   {displayRecs.map((rec) => (
                     <div
                       key={rec.item_id}
-                      onClick={() => navigate(`/${rec.type}/${rec.item_id}`)}
+                      onClick={() => navigate(`/${rec.type}/${rec.item_id}?u=${userId}`)}
                       className="flex items-center gap-4 p-4 bg-slate-800/40 border border-slate-700 rounded-xl hover:border-purple-500/50 transition-all cursor-pointer group"
                     >
                       <div className="relative w-16 h-24 rounded-lg overflow-hidden shrink-0">
@@ -485,8 +486,9 @@ const Home: React.FC = () => {
                     rating: item.rating || 0,
                     reason: '',
                     poster_path: item.poster_path || '',
+                    tmdb_id: null,
                   } as Recommendation}
-                  onClick={() => navigate(`/${item.type}/${item.id}`)}
+                  onClick={() => navigate(`/${item.type}/${item.id}?u=${userId}`)}
                   size="sm"
                 />
               ))}

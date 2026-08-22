@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getItemDetails, rateItem } from '../api';
 import { StarRating } from '../components/StarRating';
 import { Button } from '../components/Button';
 import { getPosterUrl, getGradientForTitle, getInitials } from '../utils/media';
+import { useUserId } from '../utils/useUserId';
 import { Calendar, Clock, Star, ArrowLeft, Film, Tv, Bookmark } from 'lucide-react';
 
 interface ItemDetails extends Record<string, any> {
@@ -27,11 +28,17 @@ interface ItemDetails extends Record<string, any> {
 }
 
 const DetailPage: React.FC = () => {
-  const { type, id } = useParams<{ type: string; id: string }>();
+  // App routes are matched manually in App.tsx (no <Routes>), so useParams
+  // returns {} — parse type/id from the path instead.
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [userId] = useUserId();
 
+  const [, type, rawId] = pathname.split('/');
   const isMovie = type === 'movie';
-  const itemId = `${isMovie ? 'm' : 's'}:${id}`;
+  // id may arrive bare ("123") or already prefixed ("m:123" from search results)
+  const bareId = decodeURIComponent(rawId || '').replace(/^[ms]:/, '');
+  const itemId = `${isMovie ? 'm' : 's'}:${bareId}`;
 
   const [item, setItem] = useState<ItemDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +82,7 @@ const DetailPage: React.FC = () => {
     setSaving(true);
     setRatingSaved(false);
     try {
-      await rateItem(1, itemId, newRating);
+      await rateItem(userId, itemId, newRating);
       setRatingSaved(true);
     } catch (err) {
       setError('Failed to save rating.');
@@ -250,13 +257,13 @@ const DetailPage: React.FC = () => {
             {/* CTA */}
             <div className="flex flex-wrap gap-3">
               <Button
-                onClick={() => navigate('/home')}
+                onClick={() => navigate(`/home?u=${userId}`)}
                 className="bg-gradient-to-r from-purple-600 to-blue-600"
               >
                 <SparklesIcon className="mr-2" size={18} />
                 Get Recommendations
               </Button>
-              <Button variant="outline" onClick={() => navigate('/ratings')}>
+              <Button variant="outline" onClick={() => navigate(`/ratings?u=${userId}`)}>
                 View My Ratings
               </Button>
             </div>

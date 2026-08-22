@@ -3,9 +3,17 @@
   "configurations": [
     {
       "name": "frontend",
+      "cwd": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5178", "--strictPort"],
       "port": 5178
+    },
+    {
+      "name": "backend",
+      "cwd": "backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "main:app", "--port", "8000"],
+      "port": 8000
     }
   ]
 }
