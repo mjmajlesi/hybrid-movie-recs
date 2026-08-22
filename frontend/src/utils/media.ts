@@ -5,11 +5,11 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 /**
  * Build a poster URL.
  *
- * Movies: we cached posters locally at /covers/movies/{tmdbId}.jpg.
- * If the file doesn't exist locally (or wasn't downloaded yet), we fall
- * back to the live TMDB CDN URL which serves the image by tmdb_id.
+ * Movies: posters are cached locally at /covers/movies/{tmdbId}.jpg
+ * (synced by backend scripts). Local copy first — the TMDB CDN does NOT
+ * serve images by numeric id, so there is no live fallback by id.
  *
- * Shows: already store poster_path in the DB (e.g. '/abc.jpg'), served
+ * Shows: store poster_path in the DB (e.g. '/abc.jpg'), served
  * directly from TMDB CDN.
  *
  * @param type 'movie' | 'show'
@@ -28,11 +28,10 @@ export function getPosterUrl(
     return null;
   }
 
-  // Movie: TMDB CDN serves /t/p/<size>/<tmdb_id>.jpg
-  // (We also keep local copies under /covers/movies/<tmdb_id>.jpg, but
-  // serving from CDN is simpler and works for any movie, cached or not.)
+  // Movie: local cover keyed by tmdb_id (MovieCard falls back to initials
+  // gradient via onError when the file is missing).
   if (opts.tmdbId) {
-    return `${TMDB_IMAGE_BASE}/${size}/${opts.tmdbId}.jpg`;
+    return `/covers/movies/${opts.tmdbId}.jpg`;
   }
   return null;
 }

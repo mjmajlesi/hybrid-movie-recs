@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserRatings, deleteRating, searchItems, rateItem } from '../api';
 import { Button } from '../components/Button';
+import { useUserId } from '../utils/useUserId';
 import { getPosterUrl, getGradientForTitle, getInitials } from '../utils/media';
 import { Bookmark, Trash2, Search, Star, Loader2 } from 'lucide-react';
 
@@ -22,7 +23,7 @@ const RatingsPage: React.FC = () => {
   const [ratings, setRatings] = useState<RatingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState(1);
+  const [userId, setUserId] = useUserId();
   const [addQuery, setAddQuery] = useState('');
   const [addResults, setAddResults] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -152,7 +153,7 @@ const RatingsPage: React.FC = () => {
                 {addResults.map((item) => (
                   <div key={item.id} className="flex items-center justify-between bg-slate-900 rounded-xl p-3 border border-slate-800">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative w-10 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0">
                         {renderPoster(item)}
                       </div>
                       <div className="min-w-0">
@@ -183,10 +184,10 @@ const RatingsPage: React.FC = () => {
             {ratings.map((r) => (
               <div
                 key={r.item_id}
-                onClick={() => navigate(`/${r.type}/${r.item_id}`)}
+                onClick={() => navigate(`/${r.type}/${r.item_id}?u=${userId}`)}
                 className="group flex items-center gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-white/30 transition-all cursor-pointer"
               >
-                <div className="relative w-14 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                <div className="relative w-14 h-20 rounded-xl overflow-hidden shrink-0">
                   {renderPoster(r)}
                 </div>
 

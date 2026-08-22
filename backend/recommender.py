@@ -54,28 +54,81 @@ def _load_als_from_disk():
     return None
 
 
-def als_score(user_id: int, movie_id: int) -> Optional[float]:
+def _fold_in_user(ratings: Dict[int, float]) -> Optional[np.ndarray]:
+    """Estimate latent factors for a NEW user from a few of their ratings.
+
+    The ALS model is trained on MovieLens users; app users aren't in it.
+    Standard cold-start fix: solve the least-squares for the user vector
+    given the item factors and their observed ratings (one ALS half-step).
+
+    ratings: {movie_id: rating 0.5-5.0}. Returns factor vector or None.
+    """
+    als = _load_als()
+    if als is None or not ratings:
+        return None
+    idx = [(als['item_ids'].get(m), (r - 2.5)) for m, r in ratings.items()]
+    idx = [(i, c) for i, c in idx if i is not None]
+    if len(idx) < 2:
+        return None
+    Y = als['item_factors'][[i for i, _ in idx]]            # (k, f)
+    centered = np.array([c for _, c in idx])                 # (k,)
+    # Ridge matching implicit's per-user regularization (lambda * #observed),
+    # so the solved vector stays on the same scale as trained user vectors.
+    reg = 0.01 * len(idx) * np.eye(Y.shape[1])
+    try:
+        return np.linalg.solve(Y.T @ Y + reg, Y.T @ centered)
+    except np.linalg.LinAlgError:
+        return None
+
+
+_uf_cache: dict = {}  # user_id -> folded-in factor vector (invalidated on re-rate)
+
+
+def invalidate_user(user_id: int) -> None:
+    """Drop the cached fold-in vector after the user's ratings change."""
+    _uf_cache.pop(user_id, None)
+
+
+def fold_in_user(user_id: int) -> Optional[np.ndarray]:
+    """Fold in an app user using their stored ratings; cached until invalidated."""
+    if user_id in _uf_cache:
+        return _uf_cache[user_id]
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT item_id, rating FROM user_ratings WHERE user_id = ? AND item_id LIKE 'm:%'",
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    vec = _fold_in_user({int(r['item_id'][2:]): r['rating'] for r in rows})
+    if vec is not None:
+        _uf_cache[user_id] = vec
+    return vec
+
+
+def als_score(user_id: int, movie_id: int, uvec: Optional[np.ndarray] = None) -> Optional[float]:
     """Return the ALS predicted rating for (user, movie), or None if unavailable.
-    The implicit ALS trains without an explicit offset, so the predicted
-    score sits around the training centre of 2.5; we add it back to
-    recover an estimated 0-5 rating."""
+
+    Tries, in order: exact MovieLens user id match, then the user's folded-in
+    vector derived from their app ratings. The implicit ALS trains without an
+    explicit offset, so predictions sit around the training centre of 2.5;
+    we add it back to recover an estimated 0-5 rating."""
     als = _load_als()
     if als is None:
         return None
 
-    uidx = als['user_ids'].get(user_id)
     midx = als['item_ids'].get(movie_id)
-    if uidx is None or midx is None:
+    if midx is None or midx >= als['item_factors'].shape[0]:
         return None
 
-    # Defensive: a corrupt/partial artifact may have factor rows missing for
-    # some ids. Guard the index bounds and fall back gracefully instead of
-    # crashing the whole recommendation.
-    if uidx >= als['user_factors'].shape[0] or midx >= als['item_factors'].shape[0]:
-        return None
-
-    raw = als['user_factors'][uidx] @ als['item_factors'][midx]
-    return float(raw + 2.5)          # offset back to [0, 5]
+    if uvec is not None:
+        pred = float(uvec @ als['item_factors'][midx] + 2.5)
+    else:
+        uidx = als['user_ids'].get(user_id)
+        if uidx is None or uidx >= als['user_factors'].shape[0]:
+            return None
+        pred = float(als['user_factors'][uidx] @ als['item_factors'][midx] + 2.5)
+    # Least-squares extrapolation can push predictions past the rating scale
+    return max(0.0, min(5.0, pred))
 
 
 def get_db():
@@ -203,24 +256,41 @@ def recommend(user_id: int, n: int = 10, item_type: Optional[str] = None) -> Lis
     if profile['total_ratings'] == 0:
         return _popular_fallback(n, item_type)
 
+    # Cold-start collaborative signal: fold the user's app ratings into the
+    # ALS model to get a personal factor vector (None when not enough data).
+    uvec = fold_in_user(user_id)
+    als = _load_als() if uvec is not None else None
+
     conn = get_db()
     candidates = []
 
     if item_type != 'show':
-        for r in conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count, tmdb_id FROM movies").fetchall():
+        rows = conn.execute("SELECT movie_id, title, genres, year, avg_rating, rating_count, tmdb_id, overview FROM movies").fetchall()
+        # Vectorized ALS predictions for ALL movies at once (uvec . item_factors^T),
+        # then per-row lookup — replaces 87k individual dot products.
+        collab_map = {}
+        if uvec is not None and als is not None:
+            mids = [int(r['movie_id']) for r in rows]
+            idxs = np.array([als['item_ids'].get(m, -1) for m in mids])
+            known = idxs >= 0
+            preds = np.full(len(mids), np.nan)
+            preds[known] = uvec @ als['item_factors'][idxs[known]].T + 2.5
+            preds[known] = np.clip(preds[known], 0.0, 5.0)
+            collab_map = {m: float(p) for m, p in zip(mids, preds) if not np.isnan(p)}
+
+        for r in rows:
             item_id = f"m:{r['movie_id']}"
             if item_id in profile['rated_item_ids']: continue
             genres = set(r['genres'].split('|')) if r['genres'] else set()
             year = r['year'] or 0
             avg = r['avg_rating'] or 0.0
             cnt = r['rating_count'] or 0
-            # Collaborative-filtering prediction for this user+movie (None if missing / cold start)
-            collab = als_score(user_id, int(r['movie_id']))
+            collab = collab_map.get(int(r['movie_id']))
             sc = hybrid_score(profile, genres, year, avg, cnt, collab=collab)
             candidates.append({'item_id': item_id, 'title': r['title'], 'type': 'movie', 'score': sc,
                 'genres': ', '.join(sorted(genres))[:80], 'year': year, 'rating': round(avg, 2),
                 'reason': _reason(profile, genres, avg, year, collab=collab),
-                'tmdb_id': r['tmdb_id'], 'poster_path': None, 'overview': None})
+                'tmdb_id': r['tmdb_id'], 'poster_path': None, 'overview': r['overview']})
 
     if item_type != 'movie':
         for r in conn.execute("SELECT show_id, name, genres, first_air_date, vote_average, vote_count, poster_path, overview, tmdb_id FROM shows WHERE vote_count>=50").fetchall():
@@ -231,10 +301,12 @@ def recommend(user_id: int, n: int = 10, item_type: Optional[str] = None) -> Lis
             year = int(fa[:4]) if len(fa) >= 4 else 0
             avg = r['vote_average'] or 0.0
             cnt = r['vote_count'] or 0
-            sc = hybrid_score(profile, genres, year, avg, cnt)
+            # TMDB votes are 0-10, MovieLens 0-5 — halve so both scales feed
+            # the scorer equally (display keeps the raw TMDB score).
+            sc = hybrid_score(profile, genres, year, avg / 2.0, cnt)
             candidates.append({'item_id': item_id, 'title': r['name'] or '', 'type': 'show', 'score': sc,
                 'genres': ', '.join(sorted(genres))[:80], 'year': year, 'rating': round(avg, 2),
-                'reason': _reason(profile, genres, avg, year),
+                'reason': _reason(profile, genres, avg / 2.0, year),
                 'tmdb_id': r['tmdb_id'], 'poster_path': r['poster_path'], 'overview': r['overview']})
 
     conn.close()

@@ -1,10 +1,17 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from db import get_db, init_db
-from recommender import recommend, get_user_profile
+from recommender import recommend, get_user_profile, invalidate_user
 
-app = FastAPI(title="Hybrid Movie/TV Recommender")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(title="Hybrid Movie/TV Recommender", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,10 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def startup():
-    init_db()
 
 def dict_row(row):
     return dict(row) if row else None
@@ -52,11 +55,11 @@ def get_shows(limit: int = 20, offset: int = 0):
 def search(q: str = Query(..., min_length=2), limit: int = 20):
     conn = get_db()
     rows = conn.execute(
-        "SELECT 'movie' as type, movie_id as id, title as name, year, genres, avg_rating as rating, "
+        "SELECT 'movie' as type, 'm:' || movie_id as id, title as name, year, genres, avg_rating as rating, "
         "tmdb_id as tmdb_id, NULL as poster_path "
         "FROM movies WHERE title LIKE ? "
         "UNION ALL "
-        "SELECT 'show' as type, show_id as id, name, "
+        "SELECT 'show' as type, 's:' || show_id as id, name, "
         "CAST(strftime('%Y', first_air_date) AS INTEGER) as year, genres, vote_average as rating, "
         "tmdb_id as tmdb_id, poster_path as poster_path "
         "FROM shows WHERE name LIKE ? LIMIT ?",
@@ -120,6 +123,7 @@ def rate(req: RateRequest):
     )
     conn.commit()
     conn.close()
+    invalidate_user(req.user_id)  # fold-in vector is stale after new ratings
     return {"ok": True, "message": f"Rated {item_id} = {req.rating}"}
 
 @app.get("/recommend")
@@ -206,6 +210,7 @@ def delete_rating(user_id: int, item_id: str):
     )
     conn.commit()
     conn.close()
+    invalidate_user(user_id)
     return {"ok": True, "deleted": item_id}
 
 
